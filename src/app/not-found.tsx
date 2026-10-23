@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Home, ArrowLeft, SearchX } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -44,14 +43,10 @@ export default function NotFound() {
         </CardContent>
 
         <CardFooter className="flex flex-col justify-center gap-3 sm:flex-row">
-          <Button
-            onClick={() => {
-              window.location.href = "/feed";
-            }}
-          >
+          <Link href="/feed">
             <Home className="mr-2 size-4" />
             Back to feed
-          </Button>
+          </Link>
 
           <Link
             href="/"
