@@ -13,6 +13,12 @@ export interface LoginCredentials {
   password: string;
 }
 
+export interface RegisterDetails {
+  username: string;
+  email: string;
+  password: string;
+}
+
 export interface AuthState {
   user: AuthUser | null;
   isAuthenticated: boolean;

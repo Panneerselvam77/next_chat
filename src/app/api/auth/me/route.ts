@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getAuthenticatedUser } from "@/lib/auth/session";
 
 export async function GET() {
   try {
@@ -13,33 +14,15 @@ export async function GET() {
       );
     }
 
-    const response = await fetch("https://dummyjson.com/auth/me", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
+    const user = await getAuthenticatedUser(accessToken);
+    if (!user) {
       return NextResponse.json(
-        { message: "Session expired. Please log in again." },
+        { message: "Not authenticated." },
         { status: 401 },
       );
     }
 
-    const user = await response.json();
-
-    return NextResponse.json({
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        gender: user.gender,
-        image: user.image,
-      },
-    });
+    return NextResponse.json({ user });
   } catch {
     return NextResponse.json(
       { message: "Unable to retrieve session." },

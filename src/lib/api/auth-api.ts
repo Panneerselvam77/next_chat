@@ -1,4 +1,8 @@
-import type { AuthUser, LoginCredentials } from "@/features/auth/auth.types";
+import type {
+  AuthUser,
+  LoginCredentials,
+  RegisterDetails,
+} from "@/features/auth/auth.types";
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const data = await response.json();
@@ -22,6 +26,16 @@ export async function loginApi(
 
   const data = await parseResponse<{ user: AuthUser }>(response);
   return data.user;
+}
+
+export async function registerApi(details: RegisterDetails): Promise<void> {
+  const response = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(details),
+  });
+
+  await parseResponse<{ message: string }>(response);
 }
 
 export async function getCurrentUserApi(): Promise<AuthUser> {

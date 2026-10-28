@@ -10,6 +10,7 @@ import { login, clearAuthError } from "@/features/auth/auth.slice";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -49,6 +50,11 @@ export default function LoginPage() {
           <CardDescription>
             Log in to connect with your community.
           </CardDescription>
+          <CardAction>
+            <Button variant="default">
+              <Link href={"/register"}>Sign Up</Link>
+            </Button>
+          </CardAction>
         </CardHeader>
 
         <CardContent>

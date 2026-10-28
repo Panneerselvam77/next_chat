@@ -1,8 +1,18 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
-import { getCurrentUserApi, loginApi, logoutApi } from "@/lib/api/auth-api";
+import {
+  getCurrentUserApi,
+  loginApi,
+  logoutApi,
+  registerApi,
+} from "@/lib/api/auth-api";
 
-import type { AuthState, AuthUser, LoginCredentials } from "./auth.types";
+import type {
+  AuthState,
+  AuthUser,
+  LoginCredentials,
+  RegisterDetails,
+} from "./auth.types";
 
 const initialState: AuthState = {
   user: null,
@@ -22,6 +32,20 @@ export const login = createAsyncThunk<
   } catch (error) {
     return rejectWithValue(
       error instanceof Error ? error.message : "Login failed.",
+    );
+  }
+});
+
+export const register = createAsyncThunk<
+  void,
+  RegisterDetails,
+  { rejectValue: string }
+>("auth/register", async (details, { rejectWithValue }) => {
+  try {
+    await registerApi(details);
+  } catch (error) {
+    return rejectWithValue(
+      error instanceof Error ? error.message : "Registration failed.",
     );
   }
 });
@@ -80,16 +104,33 @@ const authSlice = createSlice({
         state.initialized = true;
       })
 
+      // Registration
+      .addCase(register.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(register.fulfilled, (state) => {
+        state.isLoading = false;
+      })
+      .addCase(register.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload ?? "Registration failed.";
+      })
+
       // Restore session
       .addCase(getCurrentUser.pending, (state) => {
         state.error = null;
       })
       .addCase(getCurrentUser.fulfilled, (state, action) => {
+        if (state.isAuthenticated) return;
+
         state.user = action.payload;
         state.isAuthenticated = true;
         state.initialized = true;
       })
       .addCase(getCurrentUser.rejected, (state, action) => {
+        if (state.isAuthenticated) return;
+
         state.user = null;
         state.isAuthenticated = false;
         state.initialized = true;
@@ -101,14 +142,17 @@ const authSlice = createSlice({
 
       // Logout
       .addCase(logout.pending, (state) => {
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(logout.fulfilled, (state) => {
+        state.isLoading = false;
         state.user = null;
         state.isAuthenticated = false;
         state.initialized = true;
       })
       .addCase(logout.rejected, (state, action) => {
+        state.isLoading = false;
         state.error = action.payload ?? "Logout failed.";
       });
   },
