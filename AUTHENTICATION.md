@@ -9,6 +9,7 @@ JavaScript.
 
 | Component | Responsibility |
 | --- | --- |
+| `src/app/page.tsx` | Sends visitors to `/login`, or to `/feed` when their session is verified. |
 | `src/app/(auth)/login/page.tsx` | Collects credentials, dispatches the login thunk, and navigates to `/feed` after success. |
 | `src/app/(auth)/register/page.tsx` | Collects registration details, dispatches registration, and navigates to `/login` after success. |
 | `src/features/auth/auth.slice.ts` | Redux async thunks and in-memory UI state for the current user, loading, and errors. |
@@ -20,6 +21,7 @@ JavaScript.
 | `src/app/api/auth/logout/route.ts` | Expires the token cookies. |
 | `src/lib/auth/session.ts` | Verifies the access token with DummyJSON and maps the response to the app's `AuthUser` shape. |
 | `src/app/feed/page.tsx` | Server-protects `/feed` by checking the cookie and validating the session before rendering. |
+| `src/features/post/components/PostSearch.tsx` | Searches posts from the feed; the legacy `/search` route redirects to `/feed`. |
 
 ## Login
 
@@ -32,7 +34,8 @@ JavaScript.
    have a 30-minute max age; `Secure` is enabled in production.
 5. The browser cannot read the tokens from JavaScript. It sends the cookies
    automatically with same-origin requests.
-6. The login page navigates to `/feed`.
+6. The login page navigates to `/feed`, where the server verifies the session
+   before rendering the feed.
 
 ## Session restoration
 
@@ -45,11 +48,15 @@ state. The token itself is never stored in Redux.
 
 ## Protected feed
 
-`src/app/feed/page.tsx` is a server component. Before rendering feed content, it
-reads the access-token cookie and validates it with `getAuthenticatedUser`.
-Missing or invalid sessions are redirected to `/login`. This server-side check
-is the authorization boundary; client-side Redux state is for UI state and is
-not treated as proof of authentication.
+`src/app/page.tsx` checks for a verified session and redirects visitors to
+`/login` or `/feed`. `src/app/feed/page.tsx` also independently reads the
+access-token cookie and validates it with `getAuthenticatedUser` before
+rendering. Missing or invalid sessions are redirected to `/login`. This
+server-side check is the authorization boundary; client-side Redux state is for
+UI state and is not treated as proof of authentication.
+
+Post search is available on `/feed` above the feed list. The legacy `/search`
+URL redirects to `/feed`.
 
 ## Registration
 

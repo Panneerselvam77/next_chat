@@ -35,6 +35,11 @@ export interface PostsState {
   searchError: string | null;
   searchRequestId: string | null;
   limit: number;
+
+  likedPostIds: number[];
+  likeLoadingIds: number[];
+  likeSnapshots: Record<number, { likes: number; liked: boolean }>;
+  likeError: string | null;
 }
 
 export interface Comment {

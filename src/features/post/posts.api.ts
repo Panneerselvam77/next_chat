@@ -37,6 +37,21 @@ export async function searchPosts(
     },
     signal,
   });
+  console.log("Search API response:", response.data);
 
   return response.data;
+}
+
+export async function likePost(
+  postId: number,
+  likes: number,
+  signal?: AbortSignal,
+): Promise<void> {
+  await api.put(
+    `/posts/${postId}`,
+    {
+      reactions: { likes },
+    },
+    { signal },
+  );
 }

@@ -3,11 +3,12 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AlertCircle, ArrowRight, Loader2, MessageCircle } from "lucide-react";
 
 import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
 import { login, clearAuthError } from "@/features/auth/auth.slice";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
   CardAction,
@@ -43,31 +44,51 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>
-            Log in to connect with your community.
-          </CardDescription>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-primary/10 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-40 -right-32 size-[28rem] rounded-full bg-primary/10 blur-3xl"
+      />
+
+      <Card className="relative w-full max-w-md gap-0 border-0 shadow-xl shadow-primary/5 ring-1 ring-border/70">
+        <CardHeader className="space-y-5 px-7 pt-8 text-center sm:px-9">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+            <MessageCircle aria-hidden="true" className="size-6" />
+          </div>
+          <div className="space-y-2">
+            <CardTitle className="text-2xl font-semibold tracking-tight">
+              Welcome back
+            </CardTitle>
+            <CardDescription className="text-sm leading-6">
+              Sign in to catch up with your community.
+            </CardDescription>
+          </div>
           <CardAction>
-            <Button variant="default">
-              <Link href={"/register"}>Sign Up</Link>
-            </Button>
+            <Link
+              href="/register"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              Sign up
+            </Link>
           </CardAction>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="gap-0 px-7 pb-8 pt-6 sm:px-9">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
               <Input
                 id="username"
                 autoComplete="username"
-                placeholder="Enter your username"
+                placeholder="Your username"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 required
+                autoFocus
               />
             </div>
 
@@ -77,7 +98,7 @@ export default function LoginPage() {
                 id="password"
                 type="password"
                 autoComplete="current-password"
-                placeholder="Enter your password"
+                placeholder="Your password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
@@ -85,23 +106,42 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
+              <p
+                role="alert"
+                className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
+              >
+                <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                <span>{error}</span>
               </p>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Logging in..." : "Log in"}
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 aria-hidden="true" className="animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  Sign in
+                  <ArrowRight aria-hidden="true" />
+                </>
+              )}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Practice account?{" "}
+          <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">
+            Need a practice account?{" "}
             <Link
               href="https://dummyjson.com/docs/auth"
               target="_blank"
               rel="noreferrer"
-              className="underline underline-offset-4"
+              className="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:text-primary"
             >
               View test credentials
             </Link>

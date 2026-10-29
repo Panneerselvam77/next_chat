@@ -4,6 +4,9 @@ import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
 import { clearComments, getPostComments } from "../comments.slice";
 import CommentCard from "./CommentCard";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, MessageSquareText } from "lucide-react";
 
 interface CommentsListProps {
   postId: number;
@@ -27,33 +30,63 @@ export default function CommentsList({ postId }: CommentsListProps) {
   const isCurrentPost = currentPostId === postId;
 
   if (loading && !isCurrentPost) {
-    return <p>Loading comments...</p>;
+    return (
+      <p
+        role="status"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground"
+      >
+        <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+        Loading discussion...
+      </p>
+    );
   }
 
   if (loading && items.length === 0) {
-    return <p>Loading comments...</p>;
+    return (
+      <p
+        role="status"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground"
+      >
+        <Loader2 aria-hidden="true" className="size-4 animate-spin" />
+        Loading discussion...
+      </p>
+    );
   }
 
   if (error && isCurrentPost) {
     return (
-      <div className="space-y-3">
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-
-        <button
+      <Card className="border-destructive/20 shadow-none">
+        <CardContent className="items-start gap-3 p-4">
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+          <Button
           type="button"
-          className="rounded-md border px-4 py-2"
-          onClick={() => void dispatch(getPostComments(postId))}
-        >
-          Retry
-        </button>
-      </div>
+            variant="outline"
+            size="sm"
+            onClick={() => void dispatch(getPostComments(postId))}
+          >
+            Try again
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   if (items.length === 0) {
-    return <p className="text-sm text-muted-foreground">No comments yet.</p>;
+    return (
+      <Card className="border-dashed bg-transparent shadow-none">
+        <CardContent className="items-center gap-2 py-8 text-center">
+          <div className="flex size-10 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+            <MessageSquareText aria-hidden="true" className="size-5" />
+          </div>
+          <p className="font-medium">No replies yet</p>
+          <p className="text-sm text-muted-foreground">
+            Start the conversation by sharing your thoughts.
+          </p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (

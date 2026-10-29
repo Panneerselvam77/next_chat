@@ -3,12 +3,14 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AlertCircle, ArrowRight, Loader2, MessageCircle } from "lucide-react";
 
 import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
 import { register, clearAuthError } from "@/features/auth/auth.slice";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
+  CardAction,
   Card,
   CardContent,
   CardDescription,
@@ -49,16 +51,40 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-2 text-center">
-          <CardTitle className="text-2xl">Create an account</CardTitle>
-          <CardDescription>
-            Register to connect with your community.
-          </CardDescription>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-32 -top-32 size-96 rounded-full bg-primary/10 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-40 -right-32 size-[28rem] rounded-full bg-primary/10 blur-3xl"
+      />
+
+      <Card className="relative w-full max-w-md gap-0 border-0 shadow-xl shadow-primary/5 ring-1 ring-border/70">
+        <CardHeader className="space-y-5 px-7 pt-8 text-center sm:px-9">
+          <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+            <MessageCircle aria-hidden="true" className="size-6" />
+          </div>
+          <div className="space-y-2">
+            <CardTitle className="text-2xl font-semibold tracking-tight">
+              Join the conversation
+            </CardTitle>
+            <CardDescription className="text-sm leading-6">
+              Create an account to find and share what matters.
+            </CardDescription>
+          </div>
+          <CardAction>
+            <Link
+              href="/login"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              Sign in
+            </Link>
+          </CardAction>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="gap-0 px-7 pb-8 pt-6 sm:px-9">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
@@ -66,7 +92,7 @@ export default function RegisterPage() {
                 id="username"
                 name="username"
                 autoComplete="username"
-                placeholder="Enter your username"
+                placeholder="Choose a username"
                 value={user.username}
                 onChange={handleUserInput}
                 required
@@ -79,7 +105,7 @@ export default function RegisterPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
-                placeholder="Enter your email"
+                placeholder="you@example.com"
                 value={user.email}
                 onChange={handleUserInput}
                 required
@@ -93,7 +119,7 @@ export default function RegisterPage() {
                 name="password"
                 type="password"
                 autoComplete="new-password"
-                placeholder="Enter your password"
+                placeholder="Create a password"
                 value={user.password}
                 onChange={handleUserInput}
                 required
@@ -101,21 +127,37 @@ export default function RegisterPage() {
             </div>
 
             {error && (
-              <p role="alert" className="text-sm text-destructive">
-                {error}
+              <p
+                role="alert"
+                className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
+              >
+                <AlertCircle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                <span>{error}</span>
               </p>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Registering..." : "Register"}
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 aria-hidden="true" className="animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                <>
+                  Create account
+                  <ArrowRight aria-hidden="true" />
+                </>
+              )}
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link href="/login" className="underline underline-offset-4">
-              Login
-            </Link>
+          <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">
+            By continuing, you agree to be kind and respectful to the community.
           </p>
         </CardContent>
       </Card>

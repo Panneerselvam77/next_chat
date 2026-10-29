@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Loader2, LogOut } from "lucide-react";
 
 import { logout } from "@/features/auth/auth.slice";
 import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
@@ -23,8 +24,24 @@ export default function LogoutLink() {
 
   return (
     <div className="flex flex-col items-end gap-2">
-      <Button type="button" onClick={handleLogout} disabled={isLoading}>
-        {isLoading ? "Logging out..." : "Log out"}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={handleLogout}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <>
+            <Loader2 aria-hidden="true" className="animate-spin" />
+            Signing out
+          </>
+        ) : (
+          <>
+            <LogOut aria-hidden="true" />
+            Sign out
+          </>
+        )}
       </Button>
       {error && (
         <p role="alert" className="text-sm text-destructive">
