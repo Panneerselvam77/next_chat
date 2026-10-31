@@ -6,7 +6,7 @@ export async function fetchFeedPosts(
   limit = 20,
   signal?: AbortSignal,
 ): Promise<Post[]> {
-  const response = await api.get<Post[]>("/feed", {
+  const response = await api.get<Post[]>("/posts", {
     params: { before_id: beforeId, limit },
     signal,
   });

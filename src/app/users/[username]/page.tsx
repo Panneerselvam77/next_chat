@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { fetchUserByUsername, fetchUserPosts } from "@/features/users/users.api";
@@ -7,6 +8,8 @@ import type { Post } from "@/features/post/posts.types";
 import UserProfile from "@/features/users/components/UserProfile";
 import UserPosts from "@/features/users/components/UserPosts";
 import { buttonVariants } from "@/components/ui/button";
+
+export const instant = false;
 
 interface UserPageProps {
   params: Promise<{ username: string }>;
@@ -17,6 +20,8 @@ export default async function UserPage({ params }: UserPageProps) {
   if (!username) {
     notFound();
   }
+
+  await connection();
 
   let user: User;
   let posts: Post[];

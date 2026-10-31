@@ -7,7 +7,7 @@ import { logout } from "@/features/auth/auth.slice";
 import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
 import { Button } from "@/components/ui/button";
 
-export default function LogoutLink() {
+export default function LogoutLink({ compact = false }: { compact?: boolean }) {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const { isLoading, error } = useAppSelector((state) => state.auth);
@@ -26,25 +26,32 @@ export default function LogoutLink() {
     <div className="flex flex-col items-end gap-2">
       <Button
         type="button"
-        variant="outline"
-        size="sm"
+        variant={compact ? "ghost" : "outline"}
+        size={compact ? "icon" : "sm"}
         onClick={handleLogout}
         disabled={isLoading}
+        aria-label={compact ? (isLoading ? "Signing out" : "Sign out") : undefined}
+        title={compact ? "Sign out" : undefined}
       >
         {isLoading ? (
           <>
             <Loader2 aria-hidden="true" className="animate-spin" />
-            Signing out
+            {!compact && "Signing out"}
           </>
         ) : (
           <>
             <LogOut aria-hidden="true" />
-            Sign out
+            {!compact && "Sign out"}
           </>
         )}
       </Button>
-      {error && (
+      {error && !compact && (
         <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      {error && compact && (
+        <p role="alert" className="sr-only">
           {error}
         </p>
       )}

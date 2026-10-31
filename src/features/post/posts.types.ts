@@ -18,6 +18,8 @@ export interface PostsState {
   feedHasMore: boolean;
   feedLoading: boolean;
   feedError: string | null;
+  feedVersion: number;
+  feedRequestVersions: Record<string, number>;
 
   searchItems: Post[];
   searchQuery: string;

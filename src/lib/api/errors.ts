@@ -35,6 +35,8 @@ export function getApiRequestErrorMessage(
   error: unknown,
   fallback: string,
 ): string {
+  if (typeof error === "string") return error;
+
   if (axios.isAxiosError(error)) {
     return getApiErrorMessage(error.response?.data, error.message || fallback);
   }

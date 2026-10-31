@@ -37,11 +37,11 @@ export default function PostSearch() {
   }, [query, dispatch]);
 
   return (
-    <section className="space-y-4">
+    <section id="search" aria-label="Search posts" className="space-y-4 p-3 sm:p-4">
       <Card className="rounded-2xl border-border/70 shadow-sm">
         <CardContent className="gap-2 p-4 sm:p-5">
           <Label htmlFor="post-search" className="text-sm font-semibold">
-            Find something to explore
+            Search posts
           </Label>
           <div className="relative">
             <Search
@@ -52,7 +52,7 @@ export default function PostSearch() {
               id="post-search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search posts by keyword or topic..."
+              placeholder="Search Gather"
               aria-label="Search posts"
               aria-describedby="post-search-hint"
               className="h-11 pl-10 pr-11"
