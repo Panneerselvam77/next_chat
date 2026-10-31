@@ -1,29 +1,30 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { fetchUserById, fetchUserPosts } from "@/features/users/users.api";
+import { fetchUserByUsername, fetchUserPosts } from "@/features/users/users.api";
+import type { User } from "@/features/users/users.types";
+import type { Post } from "@/features/post/posts.types";
 import UserProfile from "@/features/users/components/UserProfile";
 import UserPosts from "@/features/users/components/UserPosts";
 import { buttonVariants } from "@/components/ui/button";
 
 interface UserPageProps {
-  params: Promise<{ userId: string }>;
+  params: Promise<{ username: string }>;
 }
 
 export default async function UserPage({ params }: UserPageProps) {
-  const { userId } = await params;
-  const id = Number(userId);
-
-  if (!Number.isInteger(id) || id <= 0) {
+  const { username } = await params;
+  if (!username) {
     notFound();
   }
 
-  const [userResult, postsResult] = await Promise.allSettled([
-    fetchUserById(id),
-    fetchUserPosts(id),
-  ]);
+  let user: User;
+  let posts: Post[];
 
-  if (userResult.status === "rejected" || postsResult.status === "rejected") {
+  try {
+    user = await fetchUserByUsername(username);
+    posts = await fetchUserPosts(user.id);
+  } catch {
     notFound();
   }
 
@@ -36,8 +37,8 @@ export default async function UserPage({ params }: UserPageProps) {
         <ArrowLeft aria-hidden="true" />
         Back to feed
       </Link>
-      <UserProfile user={userResult.value} />
-      <UserPosts posts={postsResult.value.posts} />
+      <UserProfile user={user} />
+      <UserPosts posts={posts} />
     </main>
   );
 }

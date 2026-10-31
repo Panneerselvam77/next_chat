@@ -1,6 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { fetchPostComments } from "./comments.api";
+import { fetchPostComments, createPostComment } from "./comments.api";
 import type { Comment, CommentsState } from "./comments.types";
+import { getApiRequestErrorMessage } from "@/lib/api/errors";
 
 export const getPostComments = createAsyncThunk<
   Comment[],
@@ -8,10 +9,31 @@ export const getPostComments = createAsyncThunk<
   { rejectValue: string }
 >("comments/fetchByPost", async (postId, { rejectWithValue, signal }) => {
   try {
-    const response = await fetchPostComments(postId, signal);
-    return response.comments;
-  } catch {
-    return rejectWithValue("Unable to load comments.");
+    return await fetchPostComments(postId, signal);
+  } catch (error) {
+    return rejectWithValue(
+      getApiRequestErrorMessage(error, "Unable to load comments."),
+    );
+  }
+});
+
+interface CreateCommentArgs {
+  postId: number;
+  body: string;
+}
+
+export const addPostComment = createAsyncThunk<
+  { postId: number; comment: Comment },
+  CreateCommentArgs,
+  { rejectValue: string }
+>("comments/add", async ({ postId, body }, { rejectWithValue }) => {
+  try {
+    const comment = await createPostComment(postId, body);
+    return { postId, comment };
+  } catch (error) {
+    return rejectWithValue(
+      getApiRequestErrorMessage(error, "Unable to add comment. Please try again."),
+    );
   }
 });
 
@@ -20,6 +42,8 @@ const initialState: CommentsState = {
   loading: false,
   error: null,
   currentPostId: null,
+  adding: false,
+  addError: null,
 };
 
 const commentsSlice = createSlice({
@@ -54,6 +78,23 @@ const commentsSlice = createSlice({
         if (action.meta.aborted) return;
 
         state.error = action.payload ?? "Something went wrong.";
+      })
+      .addCase(addPostComment.pending, (state) => {
+        state.adding = true;
+        state.addError = null;
+      })
+      .addCase(addPostComment.fulfilled, (state, action) => {
+        state.adding = false;
+
+        // Avoid showing a new comment under a different post.
+        if (state.currentPostId !== action.payload.postId) return;
+
+        state.items.unshift(action.payload.comment);
+      })
+      .addCase(addPostComment.rejected, (state, action) => {
+        state.adding = false;
+        state.addError =
+          action.payload ?? "Unable to add comment. Please try again.";
       });
   },
 });

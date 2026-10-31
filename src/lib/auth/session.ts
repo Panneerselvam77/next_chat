@@ -1,9 +1,10 @@
 import type { AuthUser } from "@/features/auth/auth.types";
+import { API_BASE_URL } from "@/lib/api/config";
 
 export async function getAuthenticatedUser(
   accessToken: string,
 ): Promise<AuthUser | null> {
-  const response = await fetch("https://dummyjson.com/auth/me", {
+  const response = await fetch(`${API_BASE_URL}/auth/me`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },
@@ -14,15 +15,5 @@ export async function getAuthenticatedUser(
     return null;
   }
 
-  const user = await response.json();
-
-  return {
-    id: user.id,
-    username: user.username,
-    email: user.email,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    gender: user.gender,
-    image: user.image,
-  };
+  return response.json();
 }

@@ -3,12 +3,13 @@ import type {
   LoginCredentials,
   RegisterDetails,
 } from "@/features/auth/auth.types";
+import { getApiErrorMessage } from "@/lib/api/errors";
 
 async function parseResponse<T>(response: Response): Promise<T> {
-  const data = await response.json();
+  const data: unknown = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message ?? "Something went wrong.");
+    throw new Error(getApiErrorMessage(data));
   }
 
   return data as T;
@@ -35,7 +36,7 @@ export async function registerApi(details: RegisterDetails): Promise<void> {
     body: JSON.stringify(details),
   });
 
-  await parseResponse<{ message: string }>(response);
+  await parseResponse<AuthUser>(response);
 }
 
 export async function getCurrentUserApi(): Promise<AuthUser> {

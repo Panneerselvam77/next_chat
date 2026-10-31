@@ -1,14 +1,31 @@
 import api from "@/lib/api/axios";
-import type { CommentsResponse } from "./comments.types";
+import type { Comment } from "./comments.types";
 
 export async function fetchPostComments(
   postId: number,
   signal?: AbortSignal,
-): Promise<CommentsResponse> {
-  const response = await api.get<CommentsResponse>(
+  limit = 20,
+  beforeId?: number,
+): Promise<Comment[]> {
+  const response = await api.get<Comment[]>(
     `/posts/${postId}/comments`,
-    { signal },
+    { params: { limit, before_id: beforeId }, signal },
   );
 
   return response.data;
+}
+
+export async function createPostComment(
+  postId: number,
+  body: string,
+): Promise<Comment> {
+  const response = await api.post<Comment>(`/posts/${postId}/comments`, {
+    body,
+  });
+
+  return response.data;
+}
+
+export async function deleteComment(commentId: number): Promise<void> {
+  await api.delete(`/posts/comments/${commentId}`);
 }

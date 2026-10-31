@@ -95,6 +95,9 @@ export default function RegisterPage() {
                 placeholder="Choose a username"
                 value={user.username}
                 onChange={handleUserInput}
+                minLength={3}
+                maxLength={30}
+                pattern="[A-Za-z0-9_]+"
                 required
               />
             </div>
@@ -122,6 +125,8 @@ export default function RegisterPage() {
                 placeholder="Create a password"
                 value={user.password}
                 onChange={handleUserInput}
+                minLength={8}
+                maxLength={128}
                 required
               />
             </div>

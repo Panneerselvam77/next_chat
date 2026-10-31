@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const BASE_URL = "https://dummyjson.com";
+import { API_BASE_URL } from "@/lib/api/config";
+import { getAuthenticatedUser } from "@/lib/auth/session";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,14 +18,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${BASE_URL}/auth/login`, {
+    const form = new URLSearchParams({
+      username: username.trim(),
+      password,
+    });
+    const response = await fetch(`${API_BASE_URL}/auth/token`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: username.trim(),
-        password,
-        expiresInMins: 30,
-      }),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form,
       cache: "no-store",
     });
 
@@ -33,40 +33,46 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { message: data.message ?? "Invalid credentials." },
+        { detail: data.detail ?? "Invalid credentials." },
         { status: response.status },
       );
     }
 
-    const result = NextResponse.json({
-      user: {
-        id: data.id,
-        username: data.username,
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        gender: data.gender,
-        image: data.image,
-      },
-    });
+    if (typeof data.access_token !== "string" || !data.access_token) {
+      return NextResponse.json(
+        { detail: "The login response did not include an access token." },
+        { status: 502 },
+      );
+    }
+
+    const user = await getAuthenticatedUser(data.access_token);
+    if (!user) {
+      return NextResponse.json(
+        { detail: "Unable to retrieve the authenticated user." },
+        { status: 502 },
+      );
+    }
+
+    const result = NextResponse.json({ user });
 
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax" as const,
       path: "/",
-      maxAge: 60 * 30,
+      maxAge:
+        typeof data.expires_in === "number" && data.expires_in > 0
+          ? data.expires_in
+          : 60 * 30,
     };
 
-    result.cookies.set("accessToken", data.accessToken, cookieOptions);
-
-    result.cookies.set("refreshToken", data.refreshToken, cookieOptions);
+    result.cookies.set("accessToken", data.access_token, cookieOptions);
 
     return result;
   } catch {
     return NextResponse.json(
-      { message: "Unable to log in. Please try again." },
-      { status: 500 },
+      { detail: "Unable to log in. Please try again." },
+      { status: 502 },
     );
   }
 }

@@ -80,11 +80,11 @@ export default function LoginPage() {
         <CardContent className="gap-0 px-7 pb-8 pt-6 sm:px-9">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Username or email</Label>
               <Input
                 id="username"
                 autoComplete="username"
-                placeholder="Your username"
+                placeholder="Your username or email"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 required
@@ -136,15 +136,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">
-            Need a practice account?{" "}
-            <Link
-              href="https://dummyjson.com/docs/auth"
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-foreground underline decoration-border underline-offset-4 transition-colors hover:text-primary"
-            >
-              View test credentials
-            </Link>
+            Sign in with your community account.
           </p>
         </CardContent>
       </Card>

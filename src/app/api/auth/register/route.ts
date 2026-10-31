@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-const BASE_URL = "https://dummyjson.com";
+import { API_BASE_URL } from "@/lib/api/config";
 
 export async function POST(request: NextRequest) {
   let details: unknown;
@@ -34,15 +33,13 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const response = await fetch(`${BASE_URL}/users/add`, {
+    const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username: details.username.trim(),
         email: details.email.trim(),
         password: details.password,
-        firstName: details.username.trim(),
-        lastName: "",
       }),
       cache: "no-store",
     });
@@ -51,15 +48,15 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { message: data.message ?? "Unable to register." },
+        { detail: data.detail ?? "Unable to register." },
         { status: response.status },
       );
     }
 
-    return NextResponse.json({ message: "Registration successful." });
+    return NextResponse.json(data, { status: response.status });
   } catch {
     return NextResponse.json(
-      { message: "Unable to register. Please try again." },
+      { detail: "Unable to register. Please try again." },
       { status: 502 },
     );
   }

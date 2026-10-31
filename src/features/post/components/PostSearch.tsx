@@ -14,7 +14,7 @@ export default function PostSearch() {
   const dispatch = useAppDispatch();
   const [query, setQuery] = useState("");
 
-  const { searchItems, searchLoading, searchError, searchTotal } =
+  const { searchItems, searchLoading, searchError } =
     useAppSelector((state) => state.posts);
 
   useEffect(() => {
@@ -29,8 +29,6 @@ export default function PostSearch() {
       void dispatch(
         searchPosts({
           query: trimmedQuery,
-          skip: 0,
-          limit: 10,
         }),
       );
     }, 300);
@@ -73,7 +71,7 @@ export default function PostSearch() {
             )}
           </div>
           <p id="post-search-hint" className="text-xs text-muted-foreground">
-            Results update as you type.
+            Results update as you type and search the latest 100 posts.
           </p>
         </CardContent>
       </Card>
@@ -85,7 +83,7 @@ export default function PostSearch() {
               Search results
               {!searchLoading && searchItems.length > 0 && (
                 <span className="ml-2 font-normal text-muted-foreground">
-                  {searchTotal} {searchTotal === 1 ? "post" : "posts"}
+                  {searchItems.length} {searchItems.length === 1 ? "post" : "posts"}
                 </span>
               )}
             </h2>
@@ -122,28 +120,6 @@ export default function PostSearch() {
           {searchItems.map((post) => (
             <PostCard key={post.id} post={post} />
           ))}
-          {!searchLoading &&
-            searchItems.length > 0 &&
-            searchItems.length < searchTotal && (
-              <div className="flex justify-center pt-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    void dispatch(
-                      searchPosts({
-                        query: query.trim(),
-                        skip: searchItems.length,
-                        limit: 10,
-                      }),
-                    );
-                  }}
-                  disabled={searchLoading}
-                >
-                  Load more results
-                </Button>
-              </div>
-            )}
         </div>
       )}
     </section>

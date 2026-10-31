@@ -1,5 +1,5 @@
 import type { Comment } from "../comments.types";
-import { ThumbsUp, UserRound } from "lucide-react";
+import { UserRound } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 interface CommentCardProps {
@@ -14,18 +14,14 @@ export default function CommentCard({ comment }: CommentCardProps) {
           <UserRound aria-hidden="true" className="size-4" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{comment.user.fullName}</p>
+          <p className="truncate text-sm font-semibold">{comment.author.username}</p>
           <p className="truncate text-xs text-muted-foreground">
-            @{comment.user.username}
+            {new Date(comment.created_at).toLocaleString()}
           </p>
         </div>
       </CardHeader>
       <CardContent className="gap-3 px-4 pb-4 pl-16">
         <p className="text-sm leading-6">{comment.body}</p>
-        <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-          <ThumbsUp aria-hidden="true" className="size-3.5" />
-          {comment.likes}
-        </p>
       </CardContent>
     </Card>
   );

@@ -1,46 +1,56 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 
 import {
-  fetchPosts,
+  fetchFeedPosts,
   searchPosts as searchPostsApi,
   likePost as likePostApi,
 } from "./posts.api";
 import type { Post, PostsState } from "./posts.types";
+import { getApiRequestErrorMessage } from "@/lib/api/errors";
 
 interface FetchPostsArgs {
-  skip?: number;
+  beforeId?: number;
   limit?: number;
 }
 
 interface SearchPostsArgs {
   query: string;
-  skip?: number;
-  limit?: number;
 }
 
 export const getPosts = createAsyncThunk<
-  { posts: Post[]; total: number; skip: number; limit: number },
+  { posts: Post[]; beforeId: number | null; hasMore: boolean },
   FetchPostsArgs | undefined,
   { rejectValue: string }
 >("posts/fetchPosts", async (args, { rejectWithValue, signal }) => {
+  const limit = args?.limit ?? 20;
+
   try {
-    return await fetchPosts(args?.skip ?? 0, args?.limit ?? 10, signal);
-  } catch {
-    return rejectWithValue("Unable to load posts. Please try again.");
+    const posts = await fetchFeedPosts(args?.beforeId, limit, signal);
+    return {
+      posts,
+      beforeId: posts.at(-1)?.id ?? args?.beforeId ?? null,
+      hasMore: posts.length === limit,
+    };
+  } catch (error) {
+    return rejectWithValue(
+      getApiRequestErrorMessage(error, "Unable to load posts."),
+    );
   }
 });
 
 export const searchPosts = createAsyncThunk<
-  { posts: Post[]; total: number; skip: number; limit: number },
+  Post[],
   SearchPostsArgs,
   { rejectValue: string }
 >(
   "posts/searchPosts",
-  async ({ query, skip = 0, limit = 10 }, { rejectWithValue, signal }) => {
+  async ({ query }, { rejectWithValue, signal }) => {
     try {
-      return await searchPostsApi(query, skip, limit, signal);
-    } catch {
-      return rejectWithValue("Unable to search posts. Please try again.");
+      return await searchPostsApi(query, signal);
+    } catch (error) {
+      return rejectWithValue(
+        getApiRequestErrorMessage(error, "Unable to search posts."),
+      );
     }
   },
 );
@@ -49,47 +59,45 @@ interface ToggleLikeArgs {
   postId: number;
   liked: boolean;
   currentLikes: number;
+  currentLiked: boolean;
 }
 
 export const togglePostLike = createAsyncThunk<
-  { postId: number; likes: number },
+  { postId: number; liked: boolean },
   ToggleLikeArgs,
   { rejectValue: string }
 >(
   "posts/toggleLike",
-  async ({ postId, liked, currentLikes }, { rejectWithValue, signal }) => {
-    const likes = Math.max(0, currentLikes + (liked ? 1 : -1));
-
+  async ({ postId, liked }, { rejectWithValue, signal }) => {
     try {
-      await likePostApi(postId, likes, signal);
-      return { postId, likes };
-    } catch {
-      return rejectWithValue("Unable to update like. Please try again.");
+      const result = await likePostApi(postId, liked, signal);
+      return { postId, liked: result.liked };
+    } catch (error) {
+      return rejectWithValue(
+        getApiRequestErrorMessage(error, "Unable to update like."),
+      );
     }
   },
 );
 
 const initialState: PostsState = {
   feedItems: [],
-  feedTotal: 0,
-  feedSkip: 0,
+  feedBeforeId: null,
+  feedHasMore: true,
   feedLoading: false,
   feedError: null,
 
   searchItems: [],
-  searchTotal: 0,
-  searchSkip: 0,
   searchQuery: "",
   searchLoading: false,
   searchError: null,
   searchRequestId: null,
 
-  limit: 10,
-
-  likedPostIds: [],
+  likeStates: {},
+  likeCounts: {},
   likeLoadingIds: [],
   likeSnapshots: {},
-  likeError: null as string | null,
+  likeError: null,
 };
 
 const postsSlice = createSlice({
@@ -103,8 +111,6 @@ const postsSlice = createSlice({
 
     resetSearch(state) {
       state.searchItems = [];
-      state.searchTotal = 0;
-      state.searchSkip = 0;
       state.searchQuery = "";
       state.searchLoading = false;
       state.searchError = null;
@@ -113,155 +119,130 @@ const postsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Feed
       .addCase(getPosts.pending, (state) => {
         state.feedLoading = true;
         state.feedError = null;
       })
       .addCase(getPosts.fulfilled, (state, action) => {
         state.feedLoading = false;
+        const { posts, beforeId, hasMore } = action.payload;
+        const isFirstPage = action.meta.arg?.beforeId === undefined;
 
-        if (action.payload.skip === 0) {
-          state.feedItems = action.payload.posts;
+        if (isFirstPage) {
+          state.feedItems = posts;
         } else {
           const existingIds = new Set(state.feedItems.map((post) => post.id));
           state.feedItems.push(
-            ...action.payload.posts.filter((post) => !existingIds.has(post.id)),
+            ...posts.filter((post) => !existingIds.has(post.id)),
           );
         }
 
-        state.feedTotal = action.payload.total;
-        state.feedSkip = action.payload.skip;
-        state.limit = action.payload.limit;
+        for (const post of posts) {
+          state.likeStates[post.id] = post.liked_by_me;
+          state.likeCounts[post.id] = post.likes_count;
+        }
+
+        state.feedBeforeId = beforeId;
+        state.feedHasMore = hasMore;
       })
       .addCase(getPosts.rejected, (state, action) => {
         state.feedLoading = false;
-
         if (action.meta.aborted) return;
-
         state.feedError =
-          action.payload ?? action.error.message ?? "Something went wrong.";
+          action.payload ?? action.error.message ?? "Unable to load posts.";
       })
-
-      // Search
       .addCase(searchPosts.pending, (state, action) => {
         state.searchQuery = action.meta.arg.query;
         state.searchRequestId = action.meta.requestId;
         state.searchLoading = true;
         state.searchError = null;
-
-        if ((action.meta.arg.skip ?? 0) === 0) {
-          state.searchItems = [];
-          state.searchTotal = 0;
-          state.searchSkip = 0;
-        }
+        state.searchItems = [];
       })
       .addCase(searchPosts.fulfilled, (state, action) => {
         if (state.searchRequestId !== action.meta.requestId) return;
 
         state.searchLoading = false;
-        state.searchError = null;
-
-        const { posts, total, skip } = action.payload;
-
-        if (skip === 0) {
-          // First page: replace the previous results
-          state.searchItems = posts;
-        } else {
-          // Next page: append posts without duplicates
-          const existingIds = new Set(state.searchItems.map((post) => post.id));
-
-          state.searchItems.push(
-            ...posts.filter((post) => !existingIds.has(post.id)),
-          );
+        state.searchItems = action.payload;
+        for (const post of action.payload) {
+          state.likeStates[post.id] = post.liked_by_me;
+          state.likeCounts[post.id] = post.likes_count;
         }
-
-        state.searchTotal = total;
-        state.searchSkip = skip;
       })
       .addCase(searchPosts.rejected, (state, action) => {
         if (state.searchRequestId !== action.meta.requestId) return;
-
         state.searchLoading = false;
-
         if (action.meta.aborted) return;
-
         state.searchError = action.payload ?? "Unable to search posts.";
       })
       .addCase(togglePostLike.pending, (state, action) => {
-        const { postId, liked } = action.meta.arg;
-
+        const { postId } = action.meta.arg;
         if (state.likeLoadingIds.includes(postId)) return;
+        state.likeError = null;
 
         const post =
           state.feedItems.find((item) => item.id === postId) ??
           state.searchItems.find((item) => item.id === postId);
 
-        if (!post) return;
-
-        // Save the original values for rollback.
+        const liked =
+          state.likeStates[postId] ??
+          post?.liked_by_me ??
+          action.meta.arg.currentLiked;
+        const likes = state.likeCounts[postId] ?? post?.likes_count ?? action.meta.arg.currentLikes;
         state.likeSnapshots[postId] = {
-          likes: post.reactions.likes,
-          liked: state.likedPostIds.includes(postId),
+          likes,
+          liked,
         };
-
         state.likeLoadingIds.push(postId);
 
-        // Update the UI immediately.
-        const nextLikes = Math.max(0, post.reactions.likes + (liked ? 1 : -1));
-
-        for (const item of state.feedItems) {
-          if (item.id === postId) item.reactions.likes = nextLikes;
-        }
-
-        for (const item of state.searchItems) {
-          if (item.id === postId) item.reactions.likes = nextLikes;
-        }
-
-        if (liked && !state.likedPostIds.includes(postId)) {
-          state.likedPostIds.push(postId);
-        } else if (!liked) {
-          state.likedPostIds = state.likedPostIds.filter((id) => id !== postId);
+        const nextLiked = action.meta.arg.liked;
+        const nextLikes = Math.max(
+          0,
+          likes + (nextLiked === liked ? 0 : nextLiked ? 1 : -1),
+        );
+        state.likeStates[postId] = nextLiked;
+        state.likeCounts[postId] = nextLikes;
+        for (const item of [...state.feedItems, ...state.searchItems]) {
+          if (item.id === postId) {
+            item.likes_count = nextLikes;
+            item.liked_by_me = nextLiked;
+          }
         }
       })
       .addCase(togglePostLike.fulfilled, (state, action) => {
-        const { postId, likes } = action.payload;
+        const { postId, liked } = action.payload;
+        const snapshot = state.likeSnapshots[postId];
+        const initialLiked = snapshot?.liked ?? !liked;
+        const adjustment = liked === initialLiked ? 0 : liked ? 1 : -1;
+        const nextLikes = Math.max(0, (snapshot?.likes ?? 0) + adjustment);
 
-        for (const item of state.feedItems) {
-          if (item.id === postId) item.reactions.likes = likes;
-        }
-
-        for (const item of state.searchItems) {
-          if (item.id === postId) item.reactions.likes = likes;
+        state.likeStates[postId] = liked;
+        state.likeCounts[postId] = nextLikes;
+        for (const item of [...state.feedItems, ...state.searchItems]) {
+          if (item.id === postId) {
+            item.likes_count = nextLikes;
+            item.liked_by_me = liked;
+          }
         }
 
         state.likeLoadingIds = state.likeLoadingIds.filter(
           (id) => id !== postId,
         );
-
         delete state.likeSnapshots[postId];
+        state.likeError = null;
       })
       .addCase(togglePostLike.rejected, (state, action) => {
         const { postId } = action.meta.arg;
         const snapshot = state.likeSnapshots[postId];
 
         if (snapshot) {
-          for (const item of state.feedItems) {
-            if (item.id === postId) item.reactions.likes = snapshot.likes;
+          state.likeStates[postId] = snapshot.liked;
+          state.likeCounts[postId] = snapshot.likes;
+          for (const item of [...state.feedItems, ...state.searchItems]) {
+            if (item.id === postId) {
+              item.likes_count = snapshot.likes;
+              item.liked_by_me = snapshot.liked;
+            }
           }
-
-          for (const item of state.searchItems) {
-            if (item.id === postId) item.reactions.likes = snapshot.likes;
-          }
-
-          if (snapshot.liked && !state.likedPostIds.includes(postId)) {
-            state.likedPostIds.push(postId);
-          } else if (!snapshot.liked) {
-            state.likedPostIds = state.likedPostIds.filter(
-              (id) => id !== postId,
-            );
-          }
-
           delete state.likeSnapshots[postId];
         }
 

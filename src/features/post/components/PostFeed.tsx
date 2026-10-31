@@ -11,12 +11,12 @@ import { Loader2, Newspaper } from "lucide-react";
 export default function PostFeed() {
   const dispatch = useAppDispatch();
 
-  const { feedItems, feedLoading, feedError, feedTotal } = useAppSelector(
+  const { feedItems, feedLoading, feedError, feedBeforeId, feedHasMore } = useAppSelector(
     (state) => state.posts,
   );
   useEffect(() => {
     if (feedItems.length === 0) {
-      void dispatch(getPosts({ skip: 0, limit: 10 }));
+      void dispatch(getPosts({ limit: 20 }));
     }
   }, [dispatch, feedItems.length]);
 
@@ -49,7 +49,7 @@ export default function PostFeed() {
           <Button
           type="button"
             variant="outline"
-            onClick={() => void dispatch(getPosts({ skip: 0, limit: 10 }))}
+            onClick={() => void dispatch(getPosts({ limit: 20 }))}
           >
             Try again
           </Button>
@@ -89,17 +89,17 @@ export default function PostFeed() {
         <PostCard key={post.id} post={post} />
       ))}
 
-      {feedItems.length > 0 && feedItems.length < feedTotal && (
+      {feedItems.length > 0 && feedHasMore && (
         <div className="flex flex-col items-center gap-2 pt-2">
           <p className="text-xs text-muted-foreground">
-            Showing {feedItems.length} of {feedTotal} posts
+            Showing {feedItems.length} posts
           </p>
           <Button
             type="button"
             variant="outline"
             onClick={() =>
               void dispatch(
-                getPosts({ skip: feedItems.length, limit: 10 }),
+                getPosts({ beforeId: feedBeforeId ?? undefined, limit: 20 }),
               )
             }
             disabled={feedLoading}

@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from "@/hooks/hooks";
 import { togglePostLike } from "../post.slice";
 import Link from "next/link";
 import type { Post } from "../posts.types";
-import { Eye, Heart, MessageCircle, ThumbsDown, UserRound } from "lucide-react";
+import { Heart, MessageCircle, UserRound } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Card,
@@ -20,8 +20,11 @@ interface PostCardProps {
 export default function PostCard({ post }: PostCardProps) {
   const dispatch = useAppDispatch();
 
-  const liked = useAppSelector((state) =>
-    state.posts.likedPostIds.includes(post.id),
+  const liked = useAppSelector(
+    (state) => state.posts.likeStates[post.id] ?? post.liked_by_me,
+  );
+  const likesCount = useAppSelector(
+    (state) => state.posts.likeCounts[post.id] ?? post.likes_count,
   );
 
   const liking = useAppSelector((state) =>
@@ -37,7 +40,8 @@ export default function PostCard({ post }: PostCardProps) {
       togglePostLike({
         postId: post.id,
         liked: !liked,
-        currentLikes: post.reactions.likes,
+        currentLikes: likesCount,
+        currentLiked: liked,
       }),
     );
   }
@@ -51,40 +55,23 @@ export default function PostCard({ post }: PostCardProps) {
           </div>
           <div className="min-w-0">
             <Link
-              href={`/users/${post.userId}`}
+              href={`/users/${encodeURIComponent(post.author.username)}`}
               className="text-sm font-semibold hover:text-primary hover:underline"
             >
-              Community member
+              {post.author.username}
             </Link>
             <p className="text-xs text-muted-foreground">
-              Member #{post.userId}
+              {new Date(post.created_at).toLocaleString()}
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-          <Eye aria-hidden="true" className="size-3.5" />
-          <span>{post.views.toLocaleString()} views</span>
-        </div>
+        <span className="shrink-0 text-xs text-muted-foreground">
+          Post #{post.id}
+        </span>
       </CardHeader>
 
       <CardContent className="gap-0 px-5 pb-5 sm:px-6">
-        <h2 className="text-lg font-semibold tracking-tight">{post.title}</h2>
-        <p className="mt-2 whitespace-pre-line text-sm leading-6 text-muted-foreground">
-          {post.body}
-        </p>
-
-        {post.tags.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground"
-              >
-                #{tag}
-              </span>
-            ))}
-          </div>
-        )}
+        <p className="whitespace-pre-line text-sm leading-6">{post.content}</p>
 
         {likeError && (
           <p
@@ -109,15 +96,8 @@ export default function PostCard({ post }: PostCardProps) {
             className={liked ? "text-primary hover:text-primary" : ""}
           >
             <Heart aria-hidden="true" className={liked ? "fill-current" : ""} />
-            {post.reactions.likes}
+            {likesCount}
           </Button>
-          <span
-            className="inline-flex h-8 items-center gap-1.5 px-2 text-sm text-muted-foreground"
-            aria-label={`${post.reactions.dislikes} dislikes`}
-          >
-            <ThumbsDown aria-hidden="true" className="size-4" />
-            {post.reactions.dislikes}
-          </span>
         </div>
 
         <Link
@@ -125,7 +105,7 @@ export default function PostCard({ post }: PostCardProps) {
           className={buttonVariants({ variant: "ghost", size: "sm" })}
         >
           <MessageCircle aria-hidden="true" />
-          View discussion
+          {post.comments_count} comments · View discussion
         </Link>
       </CardFooter>
     </Card>

@@ -1,13 +1,25 @@
 import api from "@/lib/api/axios";
-import type { Post, PostsResponse } from "./posts.types";
+import type { Post } from "./posts.types";
+
+export async function fetchFeedPosts(
+  beforeId?: number,
+  limit = 20,
+  signal?: AbortSignal,
+): Promise<Post[]> {
+  const response = await api.get<Post[]>("/feed", {
+    params: { before_id: beforeId, limit },
+    signal,
+  });
+
+  return response.data;
+}
 
 export async function fetchPosts(
-  skip = 0,
-  limit = 10,
+  limit = 100,
   signal?: AbortSignal,
-): Promise<PostsResponse> {
-  const response = await api.get<PostsResponse>("/posts", {
-    params: { skip, limit },
+): Promise<Post[]> {
+  const response = await api.get<Post[]>("/posts", {
+    params: { limit },
     signal,
   });
 
@@ -25,33 +37,45 @@ export async function fetchPostById(
 
 export async function searchPosts(
   query: string,
-  skip = 0,
-  limit = 10,
   signal?: AbortSignal,
-): Promise<PostsResponse> {
-  const response = await api.get<PostsResponse>("/posts/search", {
-    params: {
-      q: query,
-      skip,
-      limit,
-    },
-    signal,
-  });
-  console.log("Search API response:", response.data);
+): Promise<Post[]> {
+  const posts = await fetchPosts(100, signal);
+  const normalizedQuery = query.trim().toLocaleLowerCase();
 
-  return response.data;
+  return posts.filter(
+    (post) =>
+      post.content.toLocaleLowerCase().includes(normalizedQuery) ||
+      post.author.username.toLocaleLowerCase().includes(normalizedQuery),
+  );
 }
 
 export async function likePost(
   postId: number,
-  likes: number,
+  liked: boolean,
   signal?: AbortSignal,
-): Promise<void> {
-  await api.put(
-    `/posts/${postId}`,
-    {
-      reactions: { likes },
-    },
-    { signal },
-  );
+): Promise<{ liked: boolean }> {
+  const response = liked
+    ? await api.post<{ liked: boolean }>(`/posts/${postId}/like`, undefined, {
+        signal,
+      })
+    : await api.delete<{ liked: boolean }>(`/posts/${postId}/like`, { signal });
+
+  return response.data;
+}
+
+export async function createPost(content: string): Promise<Post> {
+  const response = await api.post<Post>("/posts", { content });
+  return response.data;
+}
+
+export async function updatePost(
+  postId: number,
+  content: string,
+): Promise<Post> {
+  const response = await api.patch<Post>(`/posts/${postId}`, { content });
+  return response.data;
+}
+
+export async function deletePost(postId: number): Promise<void> {
+  await api.delete(`/posts/${postId}`);
 }
