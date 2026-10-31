@@ -28,6 +28,12 @@ Set `API_BASE_URL` in the environment running Next.js to use another API server.
 Browser API requests go through the same-origin Next.js proxy, which attaches
 the HttpOnly access-token cookie to protected requests.
 
+## Running tests
+
+Run the Jest test suite with `npm test`. For a beginner-friendly explanation of
+the test setup, examples, coverage reports, and how to add API, Redux, and
+component tests, see the [Testing Guide](./Doc/testing-guide.md).
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
