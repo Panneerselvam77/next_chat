@@ -28,6 +28,23 @@ Set `API_BASE_URL` in the environment running Next.js to use another API server.
 Browser API requests go through the same-origin Next.js proxy, which attaches
 the HttpOnly access-token cookie to protected requests.
 
+## Production Docker deployment
+
+Build and run the production image:
+
+```bash
+docker build -t next-chat .
+docker run --rm -p 3000:3000 \
+  -e API_BASE_URL=http://host.docker.internal:8000/api/v1 \
+  next-chat
+```
+
+Open [http://localhost:3000](http://localhost:3000). Set `API_BASE_URL` to an
+address reachable from the container; `localhost` inside the container refers
+to the container itself. The image uses Next.js standalone output and runs as a
+non-root user. For production, provide the API URL through your deployment
+platform's runtime environment configuration.
+
 ## Running tests
 
 Run the Jest test suite with `npm test`. For a beginner-friendly explanation of
